@@ -1,8 +1,8 @@
 package application
 
 import (
-	"github.com/hermanowiczpiotr/ola/internal/user/application/command"
-	"github.com/hermanowiczpiotr/ola/internal/user/application/query"
+	"github.com/hermanowiczpiotr/wisecart/internal/user/application/command"
+	"github.com/hermanowiczpiotr/wisecart/internal/user/application/query"
 )
 
 type UserApp struct {

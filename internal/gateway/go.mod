@@ -1,4 +1,4 @@
-module github.com/hermanowiczpiotr/ola/internal/gateway
+module github.com/hermanowiczpiotr/wisecart/internal/gateway
 
 go 1.19
 

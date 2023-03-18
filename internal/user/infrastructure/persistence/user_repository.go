@@ -1,7 +1,7 @@
 package persistence
 
 import (
-	"github.com/hermanowiczpiotr/ola/internal/user/domain/entity"
+	"github.com/hermanowiczpiotr/wisecart/internal/user/domain/entity"
 	"gorm.io/gorm"
 )
 

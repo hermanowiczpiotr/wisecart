@@ -2,7 +2,7 @@ package ui
 
 import (
 	"github.com/go-chi/render"
-	"github.com/hermanowiczpiotr/ola/internal/gateway/infrastructure/server/grcp"
+	"github.com/hermanowiczpiotr/wisecart/internal/gateway/infrastructure/server/grcp"
 	"net/http"
 )
 

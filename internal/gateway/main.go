@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
-	"github.com/hermanowiczpiotr/ola/internal/gateway/infrastructure/server"
-	"github.com/hermanowiczpiotr/ola/internal/gateway/infrastructure/server/grcp"
-	"github.com/hermanowiczpiotr/ola/internal/gateway/ui"
+	"github.com/hermanowiczpiotr/wisecart/internal/gateway/infrastructure/server"
+	"github.com/hermanowiczpiotr/wisecart/internal/gateway/infrastructure/server/grcp"
+	"github.com/hermanowiczpiotr/wisecart/internal/gateway/ui"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"

@@ -38,3 +38,17 @@ services:
       - .env
     depends_on:
       - postgres
+  cart:
+    build: .
+    volumes:
+      - ./internal:/internal
+    ports:
+      - 3002:3002
+    environment:
+      - PORT=3001
+      - GRPC_PORT=5001
+    working_dir: /internal/cart
+    env_file:
+      - .env
+    depends_on:
+      - postgres

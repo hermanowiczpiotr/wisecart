@@ -1,4 +1,4 @@
-module github.com/hermanowiczpiotr/ola/internal/user
+module github.com/hermanowiczpiotr/wisecart/internal/user
 
 go 1.19
 
