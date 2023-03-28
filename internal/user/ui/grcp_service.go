@@ -11,7 +11,9 @@ import (
 	"github.com/hermanowiczpiotr/wisecart/internal/user/application/query"
 	"github.com/hermanowiczpiotr/wisecart/internal/user/infrastructure/genproto"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -95,12 +97,28 @@ func (gs GRPCService) Login(ctx context.Context, loginPayload *genproto.LoginReq
 }
 
 func (gs GRPCService) Validate(ctx context.Context, validateRequest *genproto.ValidateRequest) (*genproto.ValidateResponse, error) {
-	jwtToken, err := jwtauth.VerifyToken(gs.tokenAuth, validateRequest.Token)
+	parts := strings.Split(validateRequest.Token, "Bearer ")
+
+	if len(parts) == 2 {
+		fmt.Println(parts[1])
+	} else {
+		return &genproto.ValidateResponse{
+			Status: http.StatusUnauthorized,
+			Error:  "Token not found in string",
+		}, nil
+	}
+
+	jwtToken, err := jwtauth.VerifyToken(gs.tokenAuth, parts[1])
+
 	if err != nil {
-		return nil, err
+		return &genproto.ValidateResponse{
+			Status: http.StatusUnauthorized,
+			Error:  err.Error(),
+		}, nil
 	}
 
 	userId, exists := jwtToken.Get("id")
+
 	if !exists {
 		return &genproto.ValidateResponse{
 			Status: http.StatusUnauthorized,
@@ -108,8 +126,9 @@ func (gs GRPCService) Validate(ctx context.Context, validateRequest *genproto.Va
 		}, nil
 	}
 
+	log.Printf("uzytkownik", userId)
 	return &genproto.ValidateResponse{
 		Status: http.StatusOK,
-		UserId: userId.(int64),
+		UserId: userId.(string),
 	}, nil
 }

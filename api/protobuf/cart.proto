@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package genproto;
+
+option go_package = "github.com/hermanowiczpiotr/wisecart/internal/cart";
+
+message AddStoreProfileRequest{
+  string userId = 1;
+  string Name = 2;
+  string type = 3;
+  bytes AuthorizationData = 4;
+}
+
+message AddStoreProfileResponse {
+  int64 status = 1;
+  string error = 2;
+}
+
+message SynchronizeProductsRequest{
+  string profileId = 1;
+}
+
+message SynchronizeProductsResponse {
+  int64 status = 1;
+  string error = 2;
+}
+
+service Cart {
+  rpc AddProfile(AddStoreProfileRequest) returns (AddStoreProfileResponse) {}
+  rpc SynchronizeProducts(SynchronizeProductsRequest) returns (SynchronizeProductsResponse) {}
+}

@@ -10,7 +10,11 @@ services:
       POSTGRES_PASSWORD: admin
     volumes:
       - ./db-data/postgres/:/var/lib/postgresql/data/
-
+  nats:
+    image: nats:latest
+    ports:
+      - 4222:4222
+      - "8222:8222"
   user:
     build: .
     volumes:
@@ -45,8 +49,8 @@ services:
     ports:
       - 3002:3002
     environment:
-      - PORT=3001
-      - GRPC_PORT=5001
+      - PORT=3002
+      - GRPC_PORT=5002
     working_dir: /internal/cart
     env_file:
       - .env

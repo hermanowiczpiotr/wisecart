@@ -4,7 +4,7 @@
 // - protoc             v3.21.10
 // source: user.proto
 
-package grcp
+package genproto
 
 import (
 	context "context"
@@ -63,16 +63,15 @@ func (c *userClient) Validate(ctx context.Context, in *ValidateRequest, opts ...
 }
 
 // UserServer is the server API for User service.
-// All implementations must embed UnimplementedUserServer
+// All implementations should embed UnimplementedUserServer
 // for forward compatibility
 type UserServer interface {
 	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
 	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	Validate(context.Context, *ValidateRequest) (*ValidateResponse, error)
-	mustEmbedUnimplementedUserServer()
 }
 
-// UnimplementedUserServer must be embedded to have forward compatible implementations.
+// UnimplementedUserServer should be embedded to have forward compatible implementations.
 type UnimplementedUserServer struct {
 }
 
@@ -85,7 +84,6 @@ func (UnimplementedUserServer) Login(context.Context, *LoginRequest) (*LoginResp
 func (UnimplementedUserServer) Validate(context.Context, *ValidateRequest) (*ValidateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Validate not implemented")
 }
-func (UnimplementedUserServer) mustEmbedUnimplementedUserServer() {}
 
 // UnsafeUserServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to UserServer will

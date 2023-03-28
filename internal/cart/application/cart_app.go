@@ -8,8 +8,10 @@ type CartApp struct {
 }
 
 type Commands struct {
-	AddProductCommandHandler    commands.AddProductCommandHandler
-	UpdateProductCommandHandler commands.UpdateProductCommandHandler
+	AddProductCommandHandler          commands.AddProductCommandHandler
+	UpdateProductCommandHandler       commands.UpdateProductCommandHandler
+	AddStoreProfileCommandHandler     commands.AddStoreProfileCommandHandler
+	SynchronizeProductsCommandHandler commands.SynchronizeProductsCommandHandler
 }
 
 type Queries struct {

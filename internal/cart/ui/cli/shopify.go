@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/domain/repository"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/infrastructure/shopify"
 	"github.com/urfave/cli/v2"
@@ -19,24 +18,15 @@ func (cs *ShopifyCli) Run() {
 	app.Usage = "A simple CLI application"
 	app.Commands = cli.Commands{
 		{
-			Name:  "greet",
-			Usage: "Print a greeting",
-			Action: func(c *cli.Context) error {
-				fmt.Println("Hello, World!")
-				return nil
-			},
-		},
-		{
 			Name:  "fetch-products",
 			Usage: "Fetch products by profile id",
 			Action: func(c *cli.Context) error {
 				storeProfile, _ := cs.StoreProfileRepository.GetByUserId(c.Args().Get(0))
-				products, err := cs.Client.FetchProducts(storeProfile)
+				_, err := cs.Client.FetchProducts(storeProfile)
 				if err != nil {
 					return err
 				}
 
-				fmt.Println(products)
 				return nil
 			},
 		},

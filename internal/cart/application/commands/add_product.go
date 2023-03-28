@@ -8,7 +8,6 @@ import (
 )
 
 type AddProductCommand struct {
-	Type        string
 	Title       string
 	Description string
 }
@@ -27,7 +26,6 @@ func (h AddProductCommandHandler) handle(command AddProductCommand) error {
 
 	return h.productRepository.Add(entity.Product{
 		ID:          uuid.New().String(),
-		Type:        command.Type,
 		Title:       command.Title,
 		Description: command.Description,
 		UpdatedAt:   time.Now(),

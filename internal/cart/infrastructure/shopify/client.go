@@ -5,16 +5,19 @@ import (
 	goshopify "github.com/bold-commerce/go-shopify"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/application/dto"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/domain/entity"
+	"log"
 )
 
 type authData struct {
-	ApiKey    string `json:"api_key"`
-	SecretKey string `json:"secret_key"`
+	AccessToken string `json:"access_token"`
 }
 
 type Client struct {
 }
 
+func NewShopifyClient() *Client {
+	return &Client{}
+}
 func (c *Client) FetchProducts(storeProfile *entity.StoreProfile) (dto.ProductDtoList, error) {
 
 	authData, err := parseAuthData(storeProfile)
@@ -23,12 +26,8 @@ func (c *Client) FetchProducts(storeProfile *entity.StoreProfile) (dto.ProductDt
 		return dto.ProductDtoList{}, err
 	}
 
-	app := goshopify.App{
-		ApiKey:    authData.ApiKey,
-		ApiSecret: authData.SecretKey,
-	}
+	client := goshopify.NewClient(app, storeProfile.Name, authData.AccessToken)
 
-	client := goshopify.NewClient(app, storeProfile.Name, "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")
 	shopifyProducts, err := client.Product.List(nil)
 
 	if err != nil {
@@ -44,6 +43,8 @@ func (c *Client) FetchProducts(storeProfile *entity.StoreProfile) (dto.ProductDt
 			Description: shopifyProduct.BodyHTML,
 		}
 	}
+
+	log.Print(productDtoList)
 
 	return dto.ProductDtoList{
 		Products: productDtoList,
