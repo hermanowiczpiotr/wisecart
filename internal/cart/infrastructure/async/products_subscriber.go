@@ -5,49 +5,45 @@ import (
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/application/async"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/application/commands"
 	"github.com/nats-io/nats.go"
-	"log"
-	"time"
+	log "github.com/sirupsen/logrus"
 )
 
 type ProductsSubscriber struct {
-	subscription *nats.Subscription
-	command      commands.SynchronizeProductsCommandHandler
+	conn    *nats.Conn
+	command commands.SynchronizeProductsCommandHandler
 }
 
-func NewProductsSubscriber(subscription *nats.Subscription, commandHandler commands.SynchronizeProductsCommandHandler) *ProductsSubscriber {
+func NewProductsSubscriber(conn *nats.Conn, commandHandler commands.SynchronizeProductsCommandHandler) *ProductsSubscriber {
 	return &ProductsSubscriber{
-		subscription: subscription,
-		command:      commandHandler,
+		conn:    conn,
+		command: commandHandler,
 	}
 }
 
 func (h *ProductsSubscriber) Run() {
+	workersCount := 3
+	for i := 0; i < workersCount; i++ {
+		_, err := h.conn.QueueSubscribe("sync_products", "my-queue-group", func(msg *nats.Msg) {
+			log.Info("Received message: %s", string(msg.Data))
+			if msg != nil {
+				go func() {
+					var storeProfileMessage async.StoreProfileAsyncMessage
+					if err := json.Unmarshal(msg.Data, &storeProfileMessage); err != nil {
+						log.Error("Failed to parse message: %s", err)
+						return
+					}
 
-	numWorkers := 5
-	for i := 0; i < numWorkers; i++ {
-		// Wait for messages
-		msg, err := h.subscription.NextMsg(time.Second * 5)
-		log.Print(msg)
-		if err != nil {
-			// Handle error
-		}
+					h.command.Handle(commands.SynchronizeProductsCommand{
+						StoreProfileId: storeProfileMessage.StoreProfileId,
+					})
 
-		if msg != nil {
-			var storeProfileMessage async.StoreProfileAsyncMessage
-			if err := json.Unmarshal(msg.Data, &storeProfileMessage); err != nil {
-				log.Printf("Failed to parse message: %s", err)
-				return
+					msg.Ack()
+				}()
 			}
+		})
 
-			h.command.Handle(commands.SynchronizeProductsCommand{
-				StoreProfileId: storeProfileMessage.StoreProfileId,
-			})
-
-			err = msg.Ack()
-			if err != nil {
-				// Handle error
-			}
+		if err = h.conn.LastError(); err != nil {
+			log.Fatal(err)
 		}
-
 	}
 }

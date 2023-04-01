@@ -34,9 +34,9 @@ services:
     volumes:
       - ./internal:/internal
     ports:
-      - 8080:8080
+      - 8001:8001
     environment:
-      - PORT=8080
+      - PORT=8001
     working_dir: /internal/gateway
     env_file:
       - .env

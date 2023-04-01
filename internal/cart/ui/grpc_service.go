@@ -47,7 +47,7 @@ func (gs GRPCService) SynchronizeProducts(context context.Context, synchronizePr
 		}, err
 	}
 
-	gs.Publisher.Send("subject", data)
+	gs.Publisher.Send("sync_products", data)
 	return &genproto.SynchronizeProductsResponse{
 		Status: http.StatusOK,
 		Error:  "",

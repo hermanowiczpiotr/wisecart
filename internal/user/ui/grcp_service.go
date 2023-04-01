@@ -10,12 +10,14 @@ import (
 	"github.com/hermanowiczpiotr/wisecart/internal/user/application/command"
 	"github.com/hermanowiczpiotr/wisecart/internal/user/application/query"
 	"github.com/hermanowiczpiotr/wisecart/internal/user/infrastructure/genproto"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
 )
+
+const tokenExpirationTime = 15
 
 type GRPCService struct {
 	application application.UserApp
@@ -32,7 +34,11 @@ func NewGRPCService(app application.UserApp, ta *jwtauth.JWTAuth) GRPCService {
 func (gs GRPCService) Register(ctx context.Context, registerPayload *genproto.RegisterRequest) (*genproto.RegisterResponse, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerPayload.Password), 8)
 	if err != nil {
-		return nil, err
+		log.Error(err)
+		return &genproto.RegisterResponse{
+			Status: http.StatusConflict,
+			Error:  err.Error(),
+		}, err
 	}
 
 	qry := query.GetUserByEmailQuery{
@@ -42,10 +48,11 @@ func (gs GRPCService) Register(ctx context.Context, registerPayload *genproto.Re
 	user, _ := gs.application.GetUserByEmailQueryHandler.Handle(qry)
 
 	if user != nil {
+		log.Infof("email is already in use. email: %s")
 		return &genproto.RegisterResponse{
 			Status: http.StatusConflict,
-			Error:  "Email is already in use",
-		}, nil
+			Error:  "email is already in use",
+		}, errors.New("email is already in use")
 	}
 
 	cmd := command.AddUserCommand{
@@ -57,7 +64,7 @@ func (gs GRPCService) Register(ctx context.Context, registerPayload *genproto.Re
 
 	return &genproto.RegisterResponse{
 		Status: http.StatusAccepted,
-	}, err
+	}, nil
 }
 
 func (gs GRPCService) Login(ctx context.Context, loginPayload *genproto.LoginRequest) (*genproto.LoginResponse, error) {
@@ -65,6 +72,7 @@ func (gs GRPCService) Login(ctx context.Context, loginPayload *genproto.LoginReq
 
 	user, _ := gs.application.GetUserByEmailQueryHandler.Handle(qry)
 	if user == nil {
+		log.Infof("user witth email: %s not found")
 		return &genproto.LoginResponse{
 			Status: http.StatusNotFound,
 			Error:  fmt.Sprintf("User with email: %s not found", loginPayload.Email),
@@ -84,9 +92,10 @@ func (gs GRPCService) Login(ctx context.Context, loginPayload *genproto.LoginReq
 		"email": user.Email,
 	}
 
-	jwtauth.SetExpiry(claims, time.Now().Add(TOKEN_EXPIRATION_TIME))
+	jwtauth.SetExpiry(claims, time.Now().Add(tokenExpirationTime))
 	_, tokenString, err := gs.tokenAuth.Encode(claims)
 	if err != nil {
+		log.Info(err)
 		return nil, err
 	}
 
@@ -126,7 +135,6 @@ func (gs GRPCService) Validate(ctx context.Context, validateRequest *genproto.Va
 		}, nil
 	}
 
-	log.Printf("uzytkownik", userId)
 	return &genproto.ValidateResponse{
 		Status: http.StatusOK,
 		UserId: userId.(string),

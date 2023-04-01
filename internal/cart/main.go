@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/application"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/application/commands"
-	"github.com/hermanowiczpiotr/wisecart/internal/cart/domain/repository"
+	"github.com/hermanowiczpiotr/wisecart/internal/cart/domain/service"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/infrastructure/async"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/infrastructure/genproto"
+	"github.com/hermanowiczpiotr/wisecart/internal/cart/infrastructure/logs"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/infrastructure/persistence"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/infrastructure/shopify"
 	"github.com/hermanowiczpiotr/wisecart/internal/cart/ui"
@@ -16,17 +17,28 @@ import (
 	"log"
 	"net"
 	"os"
-	"runtime"
 )
 
 func main() {
+
+	logs.Init()
 	repositories := persistence.NewRepositories()
 	err := repositories.AutoMigrate()
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	nc, _ := nats.Connect("nats://nats:4222")
 	messageSender := async.NatsMessageSender{NatsConn: nc}
 
-	runSubscriber(nc, repositories.ProductRepository, repositories.StoreProfileRepository)
+	productsSub := async.NewProductsSubscriber(nc, commands.SynchronizeProductsCommandHandler{
+		ProductRepository:      repositories.ProductRepository,
+		ProductService:         service.ProductService{},
+		StoreProfileRepository: repositories.StoreProfileRepository,
+	})
+
+	productsSub.Run()
 
 	cliSrv := cli.ShopifyCli{
 		Client:                 shopify.Client{},
@@ -36,6 +48,7 @@ func main() {
 	cliSrv.Run()
 
 	if err != nil {
+		log.Fatal(err)
 
 	}
 
@@ -65,41 +78,4 @@ func runGrpcServer(grpcService ui.GRPCService) {
 	if err != nil {
 		log.Fatalln("Failed to listing:", err)
 	}
-}
-
-func runSubscriber(
-	nc *nats.Conn,
-	productRepo repository.ProductRepository,
-	storeProfileRepo repository.ProfileRepository,
-) {
-	log.Printf("mesydz")
-	//wg := sync.WaitGroup{}
-	//wg.Add(1)
-	sub, err := nc.QueueSubscribe("my.subject", "my-queue-group", func(msg *nats.Msg) {
-		log.Printf("Received message: %s", string(msg.Data))
-	})
-	if err := sub.AutoUnsubscribe(1); err != nil {
-		log.Fatal(err)
-	}
-	nc.Flush()
-	if err := nc.LastError(); err != nil {
-		log.Fatal(err)
-	}
-	//
-	//clients := []infrastructure.ClientInterface{
-	//	shopify.NewShopifyClient(),
-	//}
-	//clientService := service.ProductService{clients}
-
-	//productsSubscriber := async.NewProductsSubscriber(sub, commands.SynchronizeProductsCommandHandler{
-	//	productRepo, clientService, storeProfileRepo,
-	//})
-
-	//productsSubscriber.Run()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	//wg.Wait()
-	runtime.Goexit()
 }

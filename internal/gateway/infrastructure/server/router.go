@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/hermanowiczpiotr/wisecart/internal/gateway/infrastructure/server/genproto"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 	"net/http"
 	"os"
@@ -81,14 +82,16 @@ func (router *Router) Login(c *gin.Context) {
 	err := c.Bind(&payload)
 
 	if err != nil {
-		c.JSON(400, err)
+		log.Error(err)
+		c.JSON(http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	res, err := router.UserGrcpClient.Login(c, &payload)
 
 	if err != nil {
-		c.JSON(400, err)
+		log.Error(err)
+		c.JSON(http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
@@ -100,14 +103,16 @@ func (router *Router) RegisterUser(c *gin.Context) {
 
 	err := c.Bind(&payload)
 	if err != nil {
-		c.JSON(400, err)
+		log.Error(err)
+		c.JSON(http.StatusBadRequest, "Unable to register user")
 		return
 	}
 
 	res, err := router.UserGrcpClient.Register(c, &payload)
 
 	if err != nil {
-		c.JSON(400, err)
+		log.Error(err)
+		c.JSON(http.StatusBadRequest, "Unable to register user")
 		return
 	}
 
@@ -130,6 +135,7 @@ func (router *Router) Validate() gin.HandlerFunc {
 		res, err := router.UserGrcpClient.Validate(c, &payload)
 
 		if err != nil {
+			log.Error(err)
 			c.JSON(http.StatusUnauthorized, "Unauthorized")
 			return
 		}
@@ -155,6 +161,7 @@ func (router *Router) LoginShopify(c *gin.Context) {
 	userId, err := router.getUserId(c)
 
 	if err != nil {
+		log.Error(err)
 		c.JSON(http.StatusUnauthorized, "Unauthorized")
 		return
 	}
@@ -173,6 +180,7 @@ func (router *Router) Callback(c *gin.Context) {
 
 	token, err := oauthConf.Exchange(c, code)
 	if err != nil {
+		log.Error(err)
 		c.JSON(http.StatusUnauthorized, "Unauthorized")
 		c.Redirect(http.StatusTemporaryRedirect, "/")
 		return
@@ -190,6 +198,7 @@ func (router *Router) Callback(c *gin.Context) {
 	_, err = router.CartClient.AddProfile(r.Context(), &payload)
 
 	if err != nil {
+		log.Error(err)
 		c.JSON(http.StatusUnauthorized, "Unauthorized")
 		c.Redirect(http.StatusTemporaryRedirect, "/")
 		return
@@ -205,13 +214,15 @@ func (router *Router) syncProducts(c *gin.Context) {
 	err := c.Bind(&payload)
 
 	if err != nil {
+		log.Error(err)
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	response, err := router.CartClient.SynchronizeProducts(c, &payload)
 	if err != nil || response.Error != "" {
-		c.JSON(http.StatusBadRequest, response.Error)
+		log.Error(err)
+		c.JSON(http.StatusBadRequest, response)
 		return
 	}
 
@@ -221,7 +232,7 @@ func (router *Router) syncProducts(c *gin.Context) {
 func (router *Router) getUserId(c *gin.Context) (string, error) {
 	token := c.Request.Header.Get("Authorization")
 	if token == "" {
-		return "", nil
+		return "", errors.New("Token not found")
 	}
 
 	payload := genproto.ValidateRequest{
