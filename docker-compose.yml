@@ -14,7 +14,16 @@ services:
     image: nats:latest
     ports:
       - 4222:4222
-      - "8222:8222"
+      - 8222:8222
+#  prometheus:
+#    image: prom/prometheus
+#    volumes:
+#      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+#    command:
+#      - '--config.file=/etc/prometheus/prometheus.yml'
+#    ports:
+#      - 9090:9090
+
   user:
     build: .
     volumes:

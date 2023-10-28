@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/hermanowiczpiotr/wisecart/internal/gateway/infrastructure/metrics"
 	"github.com/hermanowiczpiotr/wisecart/internal/gateway/infrastructure/server/genproto"
 	log "github.com/sirupsen/logrus"
+	"go.opencensus.io/tag"
 	"golang.org/x/oauth2"
 	"net/http"
 	"os"
@@ -37,6 +39,8 @@ func NewRouter(userClient genproto.UserClient, cartClient genproto.CartClient) *
 	}
 
 	router.Use(corsMiddleware())
+	router.Use(openCensusMiddleware())
+
 	//router.Use(middleware.RequestID)
 	//router.Use(middleware.RealIP)
 	//router.Use(middleware.Logger)
@@ -53,6 +57,10 @@ func NewRouter(userClient genproto.UserClient, cartClient genproto.CartClient) *
 	apiGroup.Use(r.Validate())
 
 	apiGroup.POST("/cart/sync_profile", r.syncProducts)
+
+	exporter := metrics.SetupOpenCensus()
+	router.GET("/metrics", gin.WrapH(exporter))
+	//zpages.Handle(router, "/debug")
 
 	return r
 }
@@ -72,6 +80,17 @@ func corsMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		c.Next()
+	}
+}
+
+func openCensusMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, _ := tag.New(c.Request.Context(),
+			tag.Upsert(metrics.TagKeyMethod, c.Request.Method),
+			tag.Upsert(metrics.TagKeyPath, c.FullPath()),
+		)
+		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
 }
